@@ -36,22 +36,51 @@ async function generateNewCrossword() {
     return;
   }
 
-  const randomQuestions = getRandomSubset(allQuestions, selectionCount);
+  // Wie viele Wörter sollen MINDESTENS im Rätsel landen?
+  const minPlaced = 8;          // kannst du bei Bedarf auf 7 oder 9 ändern
+  const maxTries = 10;          // wie oft darf neu versucht werden?
 
-  const words = randomQuestions.map(q => ({
-    solution: q.solution.toUpperCase(),
-    clue: q.clue
-  }));
+  let bestResult = null;
+  let bestPlacedCount = 0;
 
-  // Ziel: 5 waagerecht, 5 senkrecht
-  let result = placeWords(words, 5, 5);
+  for (let attempt = 0; attempt < maxTries; attempt++) {
+    const randomQuestions = getRandomSubset(allQuestions, selectionCount);
 
-  // Falls zu wenige Wörter platziert wurden, Fallback: 4 waagerecht, 6 senkrecht
-  if (result.placedWords.length < 8) {
-    result = placeWords(words, 4, 6);
+    const words = randomQuestions.map(q => ({
+      solution: q.solution.toUpperCase(),
+      clue: q.clue
+    }));
+
+    // Primäres Ziel: 5 waagerecht, 5 senkrecht
+    let result = placeWords(words, 5, 5);
+
+    // Falls sehr wenige Wörter platziert wurden, Fallback: 4/6
+    if (result.placedWords.length < minPlaced) {
+      result = placeWords(words, 4, 6);
+    }
+
+    const placedCount = result.placedWords.length;
+
+    if (placedCount > bestPlacedCount) {
+      bestPlacedCount = placedCount;
+      bestResult = result;
+    }
+
+    // Wenn das Ergebnis gut genug ist, direkt nehmen
+    if (placedCount >= minPlaced) {
+      break;
+    }
   }
 
-  const { grid, placedWords } = result;
+  if (!bestResult || bestPlacedCount === 0) {
+    alert('Es konnte kein brauchbares Kreuzworträtsel erzeugt werden. Versuche es nochmal.');
+    return;
+  }
+
+  const { grid, placedWords } = bestResult;
+
+  console.log('Tatsächlich platzierte Wörter:', placedWords.map(w => w.solution));
+
   renderGrid(grid, placedWords);
 
   const checkBtn = document.getElementById('check-btn');
@@ -64,6 +93,7 @@ async function generateNewCrossword() {
     }
   };
 }
+
 
 // Initialisierung
 document.addEventListener('DOMContentLoaded', () => {
