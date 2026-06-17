@@ -14,7 +14,9 @@ body {
 /* Tabelle für das Kreuzworträtsel */
 #crossword {
   border-collapse: collapse;
+  border: 2px solid #000;
 }
+
 
 /* Basis für jedes Feld im Gitter */
 #crossword td {
