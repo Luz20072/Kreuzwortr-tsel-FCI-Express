@@ -30,6 +30,7 @@ body {
 /* Blockfelder (nicht zu befüllende Felder) */
 #crossword td.block {
   background: #f0f0f0;
+  border: none; 
 }
 
 /* Außenrahmen etwas dicker */
