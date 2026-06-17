@@ -3,10 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <title>BSR Kreuzworträtsel</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      margin: 2rem;
+    }
+    #fragen-liste {
+      margin-top: 1rem;
+    }
+  </style>
 </head>
 <body>
-  <h1>BSR Kreuzworträtsel – Test</h1>
-  <p>Unten siehst du aktuell testweise die geladenen Begriffe aus fragen.json.</p>
+  <h1>BSR Kreuzworträtsel – Dev-Test</h1>
+  <p>Unten siehst du testweise eine zufällige Auswahl von Begriffen aus fragen.json.</p>
+
+  <button id="neu-btn">Neue zufällige Auswahl</button>
 
   <ul id="fragen-liste">
     <li>Lade Fragen...</li>
