@@ -37,6 +37,12 @@ body {
   border: none;
 }
 
+/* Falsche Felder hellrot hinterlegen */
+#crossword td.wrong {
+  background: #fec4c4;
+}
+
+
 /* Eingabefelder in den weißen Kästchen */
 #crossword input {
   width: 100%;
@@ -95,4 +101,28 @@ body {
   max-width: 400px;
   text-align: center;
   border-radius: 6px;
+}
+
+#rules {
+  width: 100%;
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #fafafa;
+  font-size: 0.9rem;
+}
+
+#rules h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+}
+
+#rules ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+#rules li {
+  margin-bottom: 0.25rem;
 }
