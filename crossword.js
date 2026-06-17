@@ -502,14 +502,18 @@ function renderGrid(grid, placedWords) {
 // Eingaben vs. Lösung vergleichen
 function checkSolution(grid, placedWords) {
   const inputs = document.querySelectorAll('#crossword input');
+
   for (const input of inputs) {
     const r = parseInt(input.dataset.row, 10);
     const c = parseInt(input.dataset.col, 10);
     const expected = grid[r][c];
     const value = (input.value || '').toUpperCase();
+
     if (value !== expected) {
       return false;
     }
   }
+
   return true;
 }
+
