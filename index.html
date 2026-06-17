@@ -7,21 +7,97 @@
     body {
       font-family: system-ui, sans-serif;
       margin: 2rem;
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
     }
-    #fragen-liste {
+    #grid-container {
+      display: inline-block;
+    }
+    #crossword {
+      border-collapse: collapse;
+    }
+    #crossword td {
+      width: 28px;
+      height: 28px;
+      border: 1px solid #ccc;
+      text-align: center;
+      vertical-align: middle;
+      padding: 0;
+    }
+    #crossword input {
+      width: 100%;
+      height: 100%;
+      border: none;
+      text-align: center;
+      text-transform: uppercase;
+      font-size: 16px;
+      outline: none;
+    }
+    #crossword td.block {
+      background: #333;
+    }
+    #hints {
+      max-width: 400px;
+    }
+    #hints h2 {
+      margin-top: 0;
+    }
+    .hint-group {
+      margin-bottom: 1rem;
+    }
+    #controls {
+      width: 100%;
       margin-top: 1rem;
+    }
+    #secret-popup {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    #secret-popup-content {
+      background: white;
+      padding: 2rem;
+      max-width: 400px;
+      text-align: center;
+      border-radius: 6px;
     }
   </style>
 </head>
 <body>
-  <h1>BSR Kreuzworträtsel – Dev-Test</h1>
-  <p>Unten siehst du testweise eine zufällige Auswahl von Begriffen aus fragen.json.</p>
+  <div id="grid-container">
+    <h1>BSR Kreuzworträtsel</h1>
+    <table id="crossword"></table>
+  </div>
 
-  <button id="neu-btn">Neue zufällige Auswahl</button>
+  <div id="hints">
+    <h2>Hinweise</h2>
+    <div class="hint-group">
+      <h3>Waagerecht</h3>
+      <ol id="hints-across"></ol>
+    </div>
+    <div class="hint-group">
+      <h3>Senkrecht</h3>
+      <ol id="hints-down"></ol>
+    </div>
+  </div>
 
-  <ul id="fragen-liste">
-    <li>Lade Fragen...</li>
-  </ul>
+  <div id="controls">
+    <button id="neu-btn">Neues zufälliges Rätsel</button>
+    <button id="check-btn">Rätsel prüfen</button>
+  </div>
+
+  <div id="secret-popup">
+    <div id="secret-popup-content">
+      <h2>Geschafft!</h2>
+      <p>Schicke wortlos folgendes an die IT:</p>
+      <p><strong id="secret-code">GEHEIMWORT</strong></p>
+      <button id="close-popup">Schließen</button>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>
