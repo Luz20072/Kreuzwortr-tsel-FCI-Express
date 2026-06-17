@@ -502,32 +502,14 @@ function renderGrid(grid, placedWords) {
 // Eingaben vs. Lösung vergleichen
 function checkSolution(grid, placedWords) {
   const inputs = document.querySelectorAll('#crossword input');
-
-  let allCorrect = true;
-
-  // Erst alle Felder zurücksetzen
-  inputs.forEach(input => {
-    const td = input.parentElement;
-    td.classList.remove('wrong');
-  });
-
-  // Dann prüfen und falsche markieren
   for (const input of inputs) {
     const r = parseInt(input.dataset.row, 10);
     const c = parseInt(input.dataset.col, 10);
     const expected = grid[r][c];
     const value = (input.value || '').toUpperCase();
-    inputs.forEach(input => {
-        const td = input.parentElement;
-        td.classList.remove('wrong');
-    });
     if (value !== expected) {
-      allCorrect = false;
-      const td = input.parentElement;
-      td.classList.add('wrong');
+      return false;
     }
   }
-
-  return allCorrect;
+  return true;
 }
-
