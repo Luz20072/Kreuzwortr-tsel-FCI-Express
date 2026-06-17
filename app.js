@@ -53,6 +53,7 @@ async function generateNewCrossword() {
   };
 }
 
+
 // Initialisierung
 document.addEventListener('DOMContentLoaded', () => {
   generateNewCrossword().catch(err => {
