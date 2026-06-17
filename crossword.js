@@ -1,107 +1,20 @@
-const GRID_SIZE = 15; // 15x15 Feld
+const GRID_SIZE = 15;
 
 // Leeres Gitter erzeugen
-function createEmptyGrid(size) {
+function createEmptyGrid() {
   const grid = [];
-  for (let r = 0; r < size; r++) {
+  for (let r = 0; r < GRID_SIZE; r++) {
     const row = [];
-    for (let c = 0; c < size; c++) {
-      row.push(null); // null = leer / Block
+    for (let c = 0; c < GRID_SIZE; c++) {
+      row.push(null); // null = Block / leer
     }
     grid.push(row);
   }
   return grid;
 }
 
-// Versuch, Wörter ins Gitter zu legen (einfache Heuristik)
-// targetAcross / targetDown: gewünschtes Verhältnis (z.B. 5/5)
-function placeWords(words, targetAcross = 5, targetDown = 5) {
-  const grid = createEmptyGrid(GRID_SIZE);
-  const placedWords = [];
-
-  let acrossCount = 0;
-  let downCount = 0;
-
-  if (words.length === 0) return { grid, placedWords };
-
-  // Erstes Wort mittig horizontal
-  const first = words[0];
-  const startRow = Math.floor(GRID_SIZE / 2);
-  const startCol = Math.floor((GRID_SIZE - first.solution.length) / 2);
-
-  for (let i = 0; i < first.solution.length; i++) {
-    grid[startRow][startCol + i] = first.solution[i];
-  }
-  placedWords.push({
-    ...first,
-    row: startRow,
-    col: startCol,
-    direction: 'across',
-    number: 1
-  });
-  acrossCount++;
-
-  let clueNumber = 2;
-
-  // Versuche, weitere Wörter anzudocken
-  for (let w = 1; w < words.length; w++) {
-    const wordStr = words[w].solution;
-    let placed = false;
-
-    // Für jeden Buchstaben des neuen Wortes
-    for (let i = 0; i < wordStr.length && !placed; i++) {
-      const letter = wordStr[i];
-
-      for (const existing of placedWords) {
-        const existingWord = existing.solution;
-
-        for (let j = 0; j < existingWord.length && !placed; j++) {
-          if (existingWord[j] !== letter) continue;
-
-          // Position des existierenden Buchstabens im Grid
-          const baseRow = existing.row + (existing.direction === 'down' ? j : 0);
-          const baseCol = existing.col + (existing.direction === 'across' ? j : 0);
-
-          // Standard: neues Wort orthogonal zur vorhandenen Richtung
-          let newDir = existing.direction === 'across' ? 'down' : 'across';
-
-          // Versuche, Zielverhältnis zu berücksichtigen
-          if (newDir === 'across' && acrossCount >= targetAcross && downCount < targetDown) {
-            newDir = 'down';
-          } else if (newDir === 'down' && downCount >= targetDown && acrossCount < targetAcross) {
-            newDir = 'across';
-          }
-
-          const startRow2 = newDir === 'down' ? baseRow - i : baseRow;
-          const startCol2 = newDir === 'across' ? baseCol - i : baseCol;
-
-          if (canPlaceWord(grid, wordStr, startRow2, startCol2, newDir)) {
-            placeWordOnGrid(grid, wordStr, startRow2, startCol2, newDir);
-            placedWords.push({
-              ...words[w],
-              row: startRow2,
-              col: startCol2,
-              direction: newDir,
-              number: clueNumber++
-            });
-            if (newDir === 'across') {
-              acrossCount++;
-            } else {
-              downCount++;
-            }
-            placed = true;
-          }
-        }
-      }
-    }
-    // Falls kein Kreuz möglich: Wort wird ignoriert
-  }
-
-  return { grid, placedWords };
-}
-
-// Prüfen, ob Wort an Position passt
-function canPlaceWord(grid, word, row, col, direction) {
+// Prüfen, ob ein Wort an Position passt (nur Konflikte prüfen, keine Nebenwörter)
+function canPlaceWordBasic(grid, word, row, col, direction) {
   if (direction === 'across') {
     if (col < 0 || col + word.length > GRID_SIZE) return false;
     for (let i = 0; i < word.length; i++) {
@@ -137,29 +50,249 @@ function placeWordOnGrid(grid, word, row, col, direction) {
   }
 }
 
-// Grid + Inputs + Hinweise zeichnen
+// Wort aus dem Gitter entfernen (nur Buchstaben entfernen, die nicht von anderen Wörtern gebraucht werden)
+function removeWordFromGrid(grid, word, row, col, direction, placedWords) {
+  if (direction === 'across') {
+    for (let i = 0; i < word.length; i++) {
+      const r = row;
+      const c = col + i;
+      const ch = word[i];
+
+      // prüfen, ob andere platzierte Wörter diesen Buchstaben ebenfalls nutzen
+      const usedElsewhere = placedWords.some(w => {
+        if (w.row === row && w.col === col && w.direction === direction && w.solution === word) {
+          return false; // das ist genau dieses Wort
+        }
+        const len = w.solution.length;
+        for (let k = 0; k < len; k++) {
+          const wr = w.direction === 'across' ? w.row : w.row + k;
+          const wc = w.direction === 'across' ? w.col + k : w.col;
+          if (wr === r && wc === c && w.solution[k] === ch) {
+            return true;
+          }
+        }
+        return false;
+      });
+
+      if (!usedElsewhere) {
+        grid[r][c] = null;
+      }
+    }
+  } else {
+    for (let i = 0; i < word.length; i++) {
+      const r = row + i;
+      const c = col;
+      const ch = word[i];
+
+      const usedElsewhere = placedWords.some(w => {
+        if (w.row === row && w.col === col && w.direction === direction && w.solution === word) {
+          return false;
+        }
+        const len = w.solution.length;
+        for (let k = 0; k < len; k++) {
+          const wr = w.direction === 'across' ? w.row : w.row + k;
+          const wc = w.direction === 'across' ? w.col + k : w.col;
+          if (wr === r && wc === c && w.solution[k] === ch) {
+            return true;
+          }
+        }
+        return false;
+      });
+
+      if (!usedElsewhere) {
+        grid[r][c] = null;
+      }
+    }
+  }
+}
+
+// Alle Wortstrecken im Grid finden
+function findWordRuns(grid) {
+  const runsAcross = [];
+  const runsDown = [];
+
+  // horizontal
+  for (let r = 0; r < GRID_SIZE; r++) {
+    let c = 0;
+    while (c < GRID_SIZE) {
+      if (grid[r][c] !== null && (c === 0 || grid[r][c - 1] === null)) {
+        let start = c;
+        let word = '';
+        while (c < GRID_SIZE && grid[r][c] !== null) {
+          word += grid[r][c];
+          c++;
+        }
+        if (word.length >= 2) {
+          runsAcross.push({ row: r, col: start, word });
+        }
+      } else {
+        c++;
+      }
+    }
+  }
+
+  // vertikal
+  for (let c = 0; c < GRID_SIZE; c++) {
+    let r = 0;
+    while (r < GRID_SIZE) {
+      if (grid[r][c] !== null && (r === 0 || grid[r - 1][c] === null)) {
+        let start = r;
+        let word = '';
+        while (r < GRID_SIZE && grid[r][c] !== null) {
+          word += grid[r][c];
+          r++;
+        }
+        if (word.length >= 2) {
+          runsDown.push({ row: start, col: c, word });
+        }
+      } else {
+        r++;
+      }
+    }
+  }
+
+  return { runsAcross, runsDown };
+}
+
+// Prüfen, ob alle gebildeten Wortstrecken gültige Wörter sind
+function isLayoutValid(grid, words) {
+  const wordSet = new Set(words.map(w => w.solution));
+  const { runsAcross, runsDown } = findWordRuns(grid);
+  const allRuns = [...runsAcross, ...runsDown];
+  return allRuns.every(run => wordSet.has(run.word));
+}
+
+// Backtracking-Layout: versucht, so viele Wörter wie möglich zu platzieren
+function generateLayout(words) {
+  const grid = createEmptyGrid();
+
+  // erstes Wort in der Mitte waagerecht
+  const first = words[0];
+  const midRow = Math.floor(GRID_SIZE / 2);
+  const startCol = Math.floor((GRID_SIZE - first.solution.length) / 2);
+  placeWordOnGrid(grid, first.solution, midRow, startCol, 'across');
+
+  const placedWords = [{
+    ...first,
+    row: midRow,
+    col: startCol,
+    direction: 'across',
+    number: 1
+  }];
+
+  let bestPlaced = placedWords.slice();
+  let bestGrid = grid.map(row => row.slice());
+
+  function backtrack(index, nextNumber) {
+    if (index >= words.length) {
+      // alle Wörter verarbeitet
+      if (placedWords.length > bestPlaced.length && isLayoutValid(grid, placedWords)) {
+        bestPlaced.splice(0, bestPlaced.length, ...placedWords.map(w => ({ ...w })));
+        bestGrid = grid.map(row => row.slice());
+      }
+      return;
+    }
+
+    const wordObj = words[index];
+    const word = wordObj.solution;
+
+    // Versuche, das Wort an allen möglichen Kreuzungen anzudocken
+    const positions = [];
+
+    // Kandidatenpositionen: über alle bereits platzierten Wörter kreuzen
+    for (const existing of placedWords) {
+      const existingWord = existing.solution;
+
+      for (let i = 0; i < word.length; i++) {
+        const letter = word[i];
+        for (let j = 0; j < existingWord.length; j++) {
+          if (existingWord[j] !== letter) continue;
+
+          // Position des existierenden Buchstabens im Grid
+          const baseRow = existing.row + (existing.direction === 'down' ? j : 0);
+          const baseCol = existing.col + (existing.direction === 'across' ? j : 0);
+
+          // orthogonale Richtung
+          const dir = existing.direction === 'across' ? 'down' : 'across';
+          const startRow = dir === 'down' ? baseRow - i : baseRow;
+          const startCol = dir === 'across' ? baseCol - i : baseCol;
+
+          positions.push({ row: startRow, col: startCol, direction: dir });
+        }
+      }
+    }
+
+    // Zusätzlich: falls gar keine Kreuzmöglichkeit existiert, kann man optional
+    // noch "frei" platzieren – hier lassen wir das erstmal weg, damit Worte immer kreuzen.
+
+    // Positionen zufällig durchmischen, damit Layouts variieren
+    const shuffled = positions.sort(() => Math.random() - 0.5);
+
+    for (const pos of shuffled) {
+      const { row, col, direction } = pos;
+
+      // Startzelle darf nicht schon Start eines anderen Wortes sein
+      const startUsed = placedWords.some(w => w.row === row && w.col === col);
+      if (startUsed) continue;
+
+      if (!canPlaceWordBasic(grid, word, row, col, direction)) continue;
+
+      // temporär setzen
+      placeWordOnGrid(grid, word, row, col, direction);
+      placedWords.push({
+        ...wordObj,
+        row,
+        col,
+        direction,
+        number: nextNumber
+      });
+
+      // Layout nach jedem Schritt validieren
+      if (isLayoutValid(grid, placedWords)) {
+        backtrack(index + 1, nextNumber + 1);
+      }
+
+      // zurücknehmen
+      placedWords.pop();
+      removeWordFromGrid(grid, word, row, col, direction, placedWords);
+    }
+
+    // Wenn wir dieses Wort gar nicht platzieren, trotzdem weiter:
+    // vielleicht ist Layout mit weniger Wörtern besser/nötig.
+    if (placedWords.length > bestPlaced.length && isLayoutValid(grid, placedWords)) {
+      bestPlaced.splice(0, bestPlaced.length, ...placedWords.map(w => ({ ...w })));
+      bestGrid = grid.map(row => row.slice());
+    }
+    backtrack(index + 1, nextNumber); // Wort überspringen
+  }
+
+  backtrack(1, 2); // wir haben Wort 0 schon gesetzt, nächste Nummer ist 2
+
+  return { grid: bestGrid, placedWords: bestPlaced };
+}
+
+// Grid + Inputs + Hinweise zeichnen (mit Nummern und Pfeilen)
 function renderGrid(grid, placedWords) {
   const table = document.getElementById('crossword');
   table.innerHTML = '';
 
-// Startzellen merken: "row-col" -> { number, hasAcross, hasDown }
-    const startCells = new Map();
-    placedWords.forEach(word => {
+  // Startzellen merken: "row-col" -> { number, hasAcross, hasDown }
+  const startCells = new Map();
+  placedWords.forEach(word => {
     const key = word.row + '-' + word.col;
     if (!startCells.has(key)) {
-        startCells.set(key, { number: word.number, hasAcross: false, hasDown: false });
+      startCells.set(key, { number: word.number, hasAcross: false, hasDown: false });
     }
     const entry = startCells.get(key);
     if (word.direction === 'across') {
-        entry.hasAcross = true;
+      entry.hasAcross = true;
     } else if (word.direction === 'down') {
-        entry.hasDown = true;
+      entry.hasDown = true;
     }
-    });
-
+  });
 
   // Mapping von Zellen zu Wort-IDs
-  const cellWords = {}; // key "r-c" -> { across: number|undefined, down: number|undefined }
+  const cellWords = {}; // "r-c" -> { across: number|undefined, down: number|undefined }
 
   placedWords.forEach(word => {
     const len = word.solution.length;
@@ -203,45 +336,44 @@ function renderGrid(grid, placedWords) {
 
         // Nummer + Pfeile in Startzellen anzeigen
         if (startCells.has(key)) {
-        const entry = startCells.get(key);
-        const num = entry.number;
+          const entry = startCells.get(key);
+          const num = entry.number;
 
-        const container = document.createElement('span');
-        container.style.position = 'absolute';
-        container.style.top = '2px';
-        container.style.left = '3px';
-        container.style.fontSize = '10px';
-        container.style.color = '#555';
-        container.style.display = 'flex';
-        container.style.flexDirection = 'column';
-        container.style.lineHeight = '1.0';
+          const container = document.createElement('span');
+          container.style.position = 'absolute';
+          container.style.top = '2px';
+          container.style.left = '3px';
+          container.style.fontSize = '10px';
+          container.style.color = '#555';
+          container.style.display = 'flex';
+          container.style.flexDirection = 'column';
+          container.style.lineHeight = '1.0';
 
-        const numSpan = document.createElement('span');
-        numSpan.textContent = num;
-        container.appendChild(numSpan);
+          const numSpan = document.createElement('span');
+          numSpan.textContent = num;
+          container.appendChild(numSpan);
 
-        // Pfeil nach rechts unter der Zahl, wenn waagerechtes Wort
-        if (entry.hasAcross) {
+          // Pfeile klar trennen:
+          if (entry.hasAcross && !entry.hasDown) {
             const arrowRight = document.createElement('span');
-            arrowRight.textContent = '→';  // oder '►' wenn du magst
+            arrowRight.textContent = '→';
             arrowRight.style.fontSize = '8px';
             container.appendChild(arrowRight);
-        }
-
-        // Pfeil nach unten rechts daneben, wenn senkrechtes Wort
-        if (entry.hasDown) {
+          } else if (entry.hasDown && !entry.hasAcross) {
             const arrowDown = document.createElement('span');
             arrowDown.textContent = '↓';
             arrowDown.style.fontSize = '8px';
-            arrowDown.style.position = 'absolute';
-            arrowDown.style.left = '12px';   // etwas rechts versetzt
-            arrowDown.style.top = '10px';    // etwas unter der Zahl
             container.appendChild(arrowDown);
-        }
+          } else if (entry.hasAcross && entry.hasDown) {
+            // optional: ein Symbol für beides, oder nur Zahl ohne Pfeil
+            const arrowBoth = document.createElement('span');
+            arrowBoth.textContent = '↘';
+            arrowBoth.style.fontSize = '8px';
+            container.appendChild(arrowBoth);
+          }
 
-        td.appendChild(container);
+          td.appendChild(container);
         }
-
       }
 
       tr.appendChild(td);
@@ -257,7 +389,6 @@ function renderGrid(grid, placedWords) {
 
   placedWords.forEach(word => {
     const li = document.createElement('li');
-    // eigene Nummer im Text; <ul> in index.html, daher keine doppelte Nummer
     li.textContent = word.number + '. ' + word.clue;
     if (word.direction === 'across') {
       acrossList.appendChild(li);
@@ -268,8 +399,6 @@ function renderGrid(grid, placedWords) {
 
   // Eingabefluss: automatisch entlang des aktuellen Wortes springen
   const inputs = Array.from(document.querySelectorAll('#crossword input'));
-
-  // aktuelle Richtung: 'across' oder 'down'
   let currentDirection = 'across';
 
   function getInputsForWord(wordNumber, direction) {
@@ -289,7 +418,6 @@ function renderGrid(grid, placedWords) {
 
   inputs.forEach((input) => {
     input.addEventListener('focus', () => {
-      // Beim Klick entscheiden, welche Richtung aktiv ist
       const hasAcross = !!input.dataset.across;
       const hasDown = !!input.dataset.down;
 
@@ -298,7 +426,6 @@ function renderGrid(grid, placedWords) {
       } else if (!hasAcross && hasDown) {
         currentDirection = 'down';
       } else if (hasAcross && hasDown) {
-        // Kreuzungsfeld: Standard auf across
         currentDirection = 'across';
       }
     });
@@ -311,9 +438,7 @@ function renderGrid(grid, placedWords) {
 
       const dirKey = currentDirection;
       const wordNumber = input.dataset[dirKey];
-      if (!wordNumber) {
-        return;
-      }
+      if (!wordNumber) return;
 
       const wordInputs = getInputsForWord(wordNumber, dirKey);
       const index = wordInputs.indexOf(input);
@@ -335,7 +460,6 @@ function renderGrid(grid, placedWords) {
 
         if (e.key === 'Backspace') {
           if (input.value) {
-            // aktuellen Buchstaben löschen, nicht springen
             return;
           }
           if (index > 0) {
@@ -348,7 +472,6 @@ function renderGrid(grid, placedWords) {
         return;
       }
 
-      // Pfeiltasten steuern Richtung explizit
       const r = parseInt(input.dataset.row, 10);
       const c = parseInt(input.dataset.col, 10);
       let target = null;
@@ -377,7 +500,7 @@ function renderGrid(grid, placedWords) {
 }
 
 // Eingaben vs. Lösung vergleichen
-function checkSolution(grid) {
+function checkSolution(grid, placedWords) {
   const inputs = document.querySelectorAll('#crossword input');
   for (const input of inputs) {
     const r = parseInt(input.dataset.row, 10);

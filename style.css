@@ -16,7 +16,7 @@ body {
   border-collapse: collapse;
 }
 
-/* Jedes Feld im Gitter – nur Buchstabenfelder kriegen den Rand */
+/* Basis für jedes Feld im Gitter */
 #crossword td {
   width: 32px;
   height: 32px;
@@ -28,10 +28,10 @@ body {
 
 /* Buchstabenfelder: voller Rahmen */
 #crossword td:not(.block) {
-  border: 1px solid #000;  /* Linie um jedes Buchstabenfeld */
+  border: 1px solid #000;
 }
 
-/* Blockfelder (nicht zu befüllende Felder): nur grau, kein Rand */
+/* Blockfelder: nur grau, kein Rand */
 #crossword td.block {
   background: #f0f0f0;
   border: none;

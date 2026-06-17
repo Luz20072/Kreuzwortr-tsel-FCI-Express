@@ -19,7 +19,6 @@ function showSecretPopup() {
   const popup = document.getElementById('secret-popup');
   const secretCodeElem = document.getElementById('secret-code');
 
-  // Hier dein gewünschtes Codewort setzen:
   const codewort = 'KEHRWERT'; // kannst du später beliebig ändern
   secretCodeElem.textContent = codewort;
 
@@ -36,56 +35,28 @@ async function generateNewCrossword() {
     return;
   }
 
-  // Wie viele Wörter sollen MINDESTENS im Rätsel landen?
-  const minPlaced = 8;          // kannst du bei Bedarf auf 7 oder 9 ändern
-  const maxTries = 10;          // wie oft darf neu versucht werden?
+  const randomQuestions = getRandomSubset(allQuestions, selectionCount);
 
-  let bestResult = null;
-  let bestPlacedCount = 0;
+  const words = randomQuestions.map(q => ({
+    solution: q.solution.toUpperCase(),
+    clue: q.clue
+  }));
 
-  for (let attempt = 0; attempt < maxTries; attempt++) {
-    const randomQuestions = getRandomSubset(allQuestions, selectionCount);
+  // Layout mit Backtracking erzeugen
+  const { grid, placedWords } = generateLayout(words);
 
-    const words = randomQuestions.map(q => ({
-      solution: q.solution.toUpperCase(),
-      clue: q.clue
-    }));
-
-    // Primäres Ziel: 5 waagerecht, 5 senkrecht
-    let result = placeWords(words, 5, 5);
-
-    // Falls sehr wenige Wörter platziert wurden, Fallback: 4/6
-    if (result.placedWords.length < minPlaced) {
-      result = placeWords(words, 4, 6);
-    }
-
-    const placedCount = result.placedWords.length;
-
-    if (placedCount > bestPlacedCount) {
-      bestPlacedCount = placedCount;
-      bestResult = result;
-    }
-
-    // Wenn das Ergebnis gut genug ist, direkt nehmen
-    if (placedCount >= minPlaced) {
-      break;
-    }
-  }
-
-  if (!bestResult || bestPlacedCount === 0) {
-    alert('Es konnte kein brauchbares Kreuzworträtsel erzeugt werden. Versuche es nochmal.');
+  if (!placedWords || placedWords.length === 0) {
+    alert('Es konnte kein gültiges Kreuzworträtsel erzeugt werden. Versuche es nochmal.');
     return;
   }
 
-  const { grid, placedWords } = bestResult;
-
-  console.log('Tatsächlich platzierte Wörter:', placedWords.map(w => w.solution));
+  console.log('Platziert wurden:', placedWords.map(w => w.solution));
 
   renderGrid(grid, placedWords);
 
   const checkBtn = document.getElementById('check-btn');
   checkBtn.onclick = () => {
-    const ok = checkSolution(grid);
+    const ok = checkSolution(grid, placedWords);
     if (ok) {
       showSecretPopup();
     } else {
@@ -93,7 +64,6 @@ async function generateNewCrossword() {
     }
   };
 }
-
 
 // Initialisierung
 document.addEventListener('DOMContentLoaded', () => {
