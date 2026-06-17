@@ -20,7 +20,7 @@ body {
 #crossword td {
   width: 32px;
   height: 32px;
-  border: 1px solid #ccc;  /* feine Linie zwischen allen Feldern */
+  border: 3px solid #000;  /* feine Linie zwischen allen Feldern */
   text-align: center;
   vertical-align: middle;
   padding: 0;
@@ -30,7 +30,6 @@ body {
 /* Blockfelder (nicht zu befüllende Felder) */
 #crossword td.block {
   background: #f0f0f0;
-  border: 1px solid #ccc;   /* Blockfelder auch mit feiner Linie */
 }
 
 /* Außenrahmen etwas dicker */

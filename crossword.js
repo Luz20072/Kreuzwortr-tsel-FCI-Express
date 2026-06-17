@@ -142,12 +142,21 @@ function renderGrid(grid, placedWords) {
   const table = document.getElementById('crossword');
   table.innerHTML = '';
 
-  // Startzellen der Wörter merken: "row-col" -> number
-  const startCells = new Map();
-  placedWords.forEach(word => {
+// Startzellen merken: "row-col" -> { number, hasAcross, hasDown }
+    const startCells = new Map();
+    placedWords.forEach(word => {
     const key = word.row + '-' + word.col;
-    startCells.set(key, word.number);
-  });
+    if (!startCells.has(key)) {
+        startCells.set(key, { number: word.number, hasAcross: false, hasDown: false });
+    }
+    const entry = startCells.get(key);
+    if (word.direction === 'across') {
+        entry.hasAcross = true;
+    } else if (word.direction === 'down') {
+        entry.hasDown = true;
+    }
+    });
+
 
   // Mapping von Zellen zu Wort-IDs
   const cellWords = {}; // key "r-c" -> { across: number|undefined, down: number|undefined }
@@ -192,18 +201,47 @@ function renderGrid(grid, placedWords) {
 
         td.appendChild(input);
 
-        // Nummer in Startzellen anzeigen
+        // Nummer + Pfeile in Startzellen anzeigen
         if (startCells.has(key)) {
-          const num = startCells.get(key);
-          const label = document.createElement('span');
-          label.textContent = num;
-          label.style.position = 'absolute';
-          label.style.top = '2px';
-          label.style.left = '3px';
-          label.style.fontSize = '10px';
-          label.style.color = '#555';
-          td.appendChild(label);
+        const entry = startCells.get(key);
+        const num = entry.number;
+
+        const container = document.createElement('span');
+        container.style.position = 'absolute';
+        container.style.top = '2px';
+        container.style.left = '3px';
+        container.style.fontSize = '10px';
+        container.style.color = '#555';
+        container.style.display = 'flex';
+        container.style.flexDirection = 'column';
+        container.style.lineHeight = '1.0';
+
+        const numSpan = document.createElement('span');
+        numSpan.textContent = num;
+        container.appendChild(numSpan);
+
+        // Pfeil nach rechts unter der Zahl, wenn waagerechtes Wort
+        if (entry.hasAcross) {
+            const arrowRight = document.createElement('span');
+            arrowRight.textContent = '→';  // oder '►' wenn du magst
+            arrowRight.style.fontSize = '8px';
+            container.appendChild(arrowRight);
         }
+
+        // Pfeil nach unten rechts daneben, wenn senkrechtes Wort
+        if (entry.hasDown) {
+            const arrowDown = document.createElement('span');
+            arrowDown.textContent = '↓';
+            arrowDown.style.fontSize = '8px';
+            arrowDown.style.position = 'absolute';
+            arrowDown.style.left = '12px';   // etwas rechts versetzt
+            arrowDown.style.top = '10px';    // etwas unter der Zahl
+            container.appendChild(arrowDown);
+        }
+
+        td.appendChild(container);
+        }
+
       }
 
       tr.appendChild(td);
