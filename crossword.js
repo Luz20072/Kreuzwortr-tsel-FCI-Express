@@ -517,7 +517,10 @@ function checkSolution(grid, placedWords) {
     const c = parseInt(input.dataset.col, 10);
     const expected = grid[r][c];
     const value = (input.value || '').toUpperCase();
-
+    inputs.forEach(input => {
+        const td = input.parentElement;
+        td.classList.remove('wrong');
+    });
     if (value !== expected) {
       allCorrect = false;
       const td = input.parentElement;
@@ -527,3 +530,4 @@ function checkSolution(grid, placedWords) {
 
   return allCorrect;
 }
+

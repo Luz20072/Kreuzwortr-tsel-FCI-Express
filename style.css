@@ -39,9 +39,8 @@ body {
 
 /* Falsche Felder hellrot hinterlegen */
 #crossword td.wrong {
-  background: #ffe0e0 !important;
+  background: #fec4c4;
 }
-
 
 
 /* Eingabefelder in den weißen Kästchen */
