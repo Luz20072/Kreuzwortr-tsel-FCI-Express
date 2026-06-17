@@ -14,9 +14,13 @@ function createEmptyGrid(size) {
 }
 
 // Versuch, Wörter ins Gitter zu legen (einfache Heuristik)
-function placeWords(words) {
+// targetAcross / targetDown: gewünschtes Verhältnis (z.B. 5/5)
+function placeWords(words, targetAcross = 5, targetDown = 5) {
   const grid = createEmptyGrid(GRID_SIZE);
   const placedWords = [];
+
+  let acrossCount = 0;
+  let downCount = 0;
 
   if (words.length === 0) return { grid, placedWords };
 
@@ -35,6 +39,7 @@ function placeWords(words) {
     direction: 'across',
     number: 1
   });
+  acrossCount++;
 
   let clueNumber = 2;
 
@@ -57,8 +62,15 @@ function placeWords(words) {
           const baseRow = existing.row + (existing.direction === 'down' ? j : 0);
           const baseCol = existing.col + (existing.direction === 'across' ? j : 0);
 
-          // Neues Wort orthogonal zur vorhandenen Richtung
-          const newDir = existing.direction === 'across' ? 'down' : 'across';
+          // Standard: neues Wort orthogonal zur vorhandenen Richtung
+          let newDir = existing.direction === 'across' ? 'down' : 'across';
+
+          // Versuche, Zielverhältnis zu berücksichtigen
+          if (newDir === 'across' && acrossCount >= targetAcross && downCount < targetDown) {
+            newDir = 'down';
+          } else if (newDir === 'down' && downCount >= targetDown && acrossCount < targetAcross) {
+            newDir = 'across';
+          }
 
           const startRow2 = newDir === 'down' ? baseRow - i : baseRow;
           const startCol2 = newDir === 'across' ? baseCol - i : baseCol;
@@ -72,6 +84,11 @@ function placeWords(words) {
               direction: newDir,
               number: clueNumber++
             });
+            if (newDir === 'across') {
+              acrossCount++;
+            } else {
+              downCount++;
+            }
             placed = true;
           }
         }
@@ -202,7 +219,7 @@ function renderGrid(grid, placedWords) {
 
   placedWords.forEach(word => {
     const li = document.createElement('li');
-    // eigene Nummer im Text; in index.html dann <ul> verwenden, wenn du keine doppelte Nummer willst
+    // eigene Nummer im Text; <ul> in index.html, daher keine doppelte Nummer
     li.textContent = word.number + '. ' + word.clue;
     if (word.direction === 'across') {
       acrossList.appendChild(li);
@@ -243,7 +260,7 @@ function renderGrid(grid, placedWords) {
       } else if (!hasAcross && hasDown) {
         currentDirection = 'down';
       } else if (hasAcross && hasDown) {
-        // Kreuzungsfeld: Standard auf across, könnte man später toggeln
+        // Kreuzungsfeld: Standard auf across
         currentDirection = 'across';
       }
     });

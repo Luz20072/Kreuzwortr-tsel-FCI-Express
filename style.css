@@ -51,7 +51,7 @@ body {
   margin-bottom: 1rem;
 }
 
-/* Aufzählung in den Hinweisen ohne Bullet/Nummer, nur unsere Zahl im Text */
+/* Hinweise ohne Bullet/Nummer, nur unsere Zahl im Text */
 #hints ul {
   list-style-type: none;
   padding-left: 0;
@@ -64,6 +64,8 @@ body {
 #controls {
   width: 100%;
   margin-top: 1rem;
+  display: flex;
+  gap: 0.5rem;
 }
 
 #secret-popup {

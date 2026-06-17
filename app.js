@@ -30,8 +30,12 @@ function showSecretPopup() {
 async function generateNewCrossword() {
   const allQuestions = await loadQuestions();
 
-  // Anzahl Wörter pro Rätsel – kannst du anpassen
-  const selectionCount = Math.min(15, allQuestions.length);
+  const selectionCount = 10;
+  if (allQuestions.length < selectionCount) {
+    alert('Es werden mindestens 10 Fragen im Pool benötigt.');
+    return;
+  }
+
   const randomQuestions = getRandomSubset(allQuestions, selectionCount);
 
   const words = randomQuestions.map(q => ({
@@ -39,7 +43,15 @@ async function generateNewCrossword() {
     clue: q.clue
   }));
 
-  const { grid, placedWords } = placeWords(words);
+  // Ziel: 5 waagerecht, 5 senkrecht
+  let result = placeWords(words, 5, 5);
+
+  // Falls zu wenige Wörter platziert wurden, Fallback: 4 waagerecht, 6 senkrecht
+  if (result.placedWords.length < 8) {
+    result = placeWords(words, 4, 6);
+  }
+
+  const { grid, placedWords } = result;
   renderGrid(grid, placedWords);
 
   const checkBtn = document.getElementById('check-btn');
@@ -52,7 +64,6 @@ async function generateNewCrossword() {
     }
   };
 }
-
 
 // Initialisierung
 document.addEventListener('DOMContentLoaded', () => {
