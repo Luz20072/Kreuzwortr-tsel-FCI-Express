@@ -72,14 +72,6 @@ document.addEventListener('DOMContentLoaded', () => {
     alert('Fehler beim Erzeugen des Kreuzworträtsels.');
   });
 
-  const neuBtn = document.getElementById('neu-btn');
-  neuBtn.addEventListener('click', () => {
-    generateNewCrossword().catch(err => {
-      console.error(err);
-      alert('Fehler beim Erzeugen eines neuen Rätsels.');
-    });
-  });
-
   const closePopup = document.getElementById('close-popup');
   closePopup.addEventListener('click', () => {
     document.getElementById('secret-popup').style.display = 'none';
