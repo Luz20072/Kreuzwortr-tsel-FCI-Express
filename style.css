@@ -6,7 +6,7 @@ body {
   flex-wrap: wrap;
 }
 
-/* Container für das Gitter */
+/* Container für die Überschrift / das Gitter */
 #grid-container {
   display: inline-block;
 }
@@ -17,8 +17,7 @@ body {
   border: 2px solid #000;
 }
 
-
-/* Basis für jedes Feld im Gitter */
+/* Zellen im Gitter */
 #crossword td {
   width: 32px;
   height: 32px;
@@ -33,14 +32,13 @@ body {
   border: 1px solid #000;
 }
 
-/* Blockfelder: nur grau, kein Rand */
+/* Blockfelder: grau, ohne Rand */
 #crossword td.block {
   background: #f0f0f0;
   border: none;
 }
 
-
-/* Eingabefelder in den weißen Kästchen */
+/* Eingabefelder in den Buchstabenfeldern */
 #crossword input {
   width: 100%;
   height: 100%;
@@ -51,7 +49,7 @@ body {
   outline: none;
 }
 
-/* Bereich für Hinweise rechts */
+/* Bereich für Hinweise */
 #hints {
   max-width: 400px;
 }
@@ -64,7 +62,7 @@ body {
   margin-bottom: 1rem;
 }
 
-/* Hinweise ohne Bullet/Nummer, nur unsere TEXT-Nummer z.B. "1. ..." */
+/* Hinweise ohne Bullet, nur eigene Nummerierung im Text */
 #hints ul {
   list-style-type: none;
   padding-left: 0;
@@ -86,20 +84,21 @@ body {
 #secret-popup {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.7);
+  background: rgba(0, 0, 0, 0.7);
   display: none;
   align-items: center;
   justify-content: center;
 }
 
 #secret-popup-content {
-  background: white;
+  background: #ffffff;
   padding: 2rem;
   max-width: 400px;
   text-align: center;
   border-radius: 6px;
 }
 
+/* Hinweis-Box mit Regeln */
 #rules {
   width: 100%;
   margin-top: 1rem;
@@ -124,17 +123,18 @@ body {
   margin-bottom: 0.25rem;
 }
 
+/* Info-Popup (Fehler / zu kleine Rätsel) */
 #info-popup {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.7);
+  background: rgba(0, 0, 0, 0.7);
   display: none;
   align-items: center;
   justify-content: center;
 }
 
 #info-popup-content {
-  background: white;
+  background: #ffffff;
   padding: 2rem;
   max-width: 400px;
   text-align: center;

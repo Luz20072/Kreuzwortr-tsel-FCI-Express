@@ -1,19 +1,21 @@
 const GRID_SIZE = 15;
 
-// Leeres Gitter erzeugen
+// Leeres Gitter (GRID_SIZE x GRID_SIZE) erzeugen
+// null bedeutet: kein Buchstabe / Blockfeld
 function createEmptyGrid() {
   const grid = [];
   for (let r = 0; r < GRID_SIZE; r++) {
     const row = [];
     for (let c = 0; c < GRID_SIZE; c++) {
-      row.push(null); // null = Block / leer
+      row.push(null);
     }
     grid.push(row);
   }
   return grid;
 }
 
-// Prüfen, ob ein Wort an Position passt (nur Konflikte prüfen, keine Nebenwörter)
+// Prüfen, ob ein Wort an der gewünschten Position grundsätzlich platziert werden kann
+// (passt in das Gitter, kollidiert nicht mit anderen Buchstaben)
 function canPlaceWordBasic(grid, word, row, col, direction) {
   if (direction === 'across') {
     if (col < 0 || col + word.length > GRID_SIZE) return false;
@@ -37,7 +39,7 @@ function canPlaceWordBasic(grid, word, row, col, direction) {
   return true;
 }
 
-// Wort ins Gitter schreiben
+// Wort ins Gitter eintragen
 function placeWordOnGrid(grid, word, row, col, direction) {
   if (direction === 'across') {
     for (let i = 0; i < word.length; i++) {
@@ -50,7 +52,7 @@ function placeWordOnGrid(grid, word, row, col, direction) {
   }
 }
 
-// Wort aus dem Gitter entfernen (nur Buchstaben entfernen, die nicht von anderen Wörtern gebraucht werden)
+// Wort aus dem Gitter entfernen, ohne Buchstaben zu löschen, die von anderen Wörtern genutzt werden
 function removeWordFromGrid(grid, word, row, col, direction, placedWords) {
   if (direction === 'across') {
     for (let i = 0; i < word.length; i++) {
@@ -58,10 +60,10 @@ function removeWordFromGrid(grid, word, row, col, direction, placedWords) {
       const c = col + i;
       const ch = word[i];
 
-      // prüfen, ob andere platzierte Wörter diesen Buchstaben ebenfalls nutzen
       const usedElsewhere = placedWords.some(w => {
+        // genau dieses Wort überspringen
         if (w.row === row && w.col === col && w.direction === direction && w.solution === word) {
-          return false; // das ist genau dieses Wort
+          return false;
         }
         const len = w.solution.length;
         for (let k = 0; k < len; k++) {
@@ -106,12 +108,12 @@ function removeWordFromGrid(grid, word, row, col, direction, placedWords) {
   }
 }
 
-// Alle Wortstrecken im Grid finden
+// Alle „Laufstrecken“ (zusammenhängende Buchstabenfolgen) im Gitter ermitteln
 function findWordRuns(grid) {
   const runsAcross = [];
   const runsDown = [];
 
-  // horizontal
+  // horizontal suchen
   for (let r = 0; r < GRID_SIZE; r++) {
     let c = 0;
     while (c < GRID_SIZE) {
@@ -131,7 +133,7 @@ function findWordRuns(grid) {
     }
   }
 
-  // vertikal
+  // vertikal suchen
   for (let c = 0; c < GRID_SIZE; c++) {
     let r = 0;
     while (r < GRID_SIZE) {
@@ -154,7 +156,7 @@ function findWordRuns(grid) {
   return { runsAcross, runsDown };
 }
 
-// Prüfen, ob alle gebildeten Wortstrecken gültige Wörter sind
+// Prüfen, ob alle gebildeten Wortstrecken gültige Lösungswörter sind
 function isLayoutValid(grid, words) {
   const wordSet = new Set(words.map(w => w.solution));
   const { runsAcross, runsDown } = findWordRuns(grid);
@@ -162,11 +164,11 @@ function isLayoutValid(grid, words) {
   return allRuns.every(run => wordSet.has(run.word));
 }
 
-// Backtracking-Layout: versucht, so viele Wörter wie möglich zu platzieren
+// Layout mit Backtracking: versucht, möglichst viele Wörter passend zu platzieren
 function generateLayout(words) {
   const grid = createEmptyGrid();
 
-  // erstes Wort in der Mitte waagerecht
+  // Erstes Wort mittig waagerecht als Start
   const first = words[0];
   const midRow = Math.floor(GRID_SIZE / 2);
   const startCol = Math.floor((GRID_SIZE - first.solution.length) / 2);
@@ -185,7 +187,7 @@ function generateLayout(words) {
 
   function backtrack(index, nextNumber) {
     if (index >= words.length) {
-      // alle Wörter verarbeitet
+      // Alle Wörter wurden verarbeitet
       if (placedWords.length > bestPlaced.length && isLayoutValid(grid, placedWords)) {
         bestPlaced.splice(0, bestPlaced.length, ...placedWords.map(w => ({ ...w })));
         bestGrid = grid.map(row => row.slice());
@@ -196,10 +198,10 @@ function generateLayout(words) {
     const wordObj = words[index];
     const word = wordObj.solution;
 
-    // Versuche, das Wort an allen möglichen Kreuzungen anzudocken
+    // Mögliche Positionen für das aktuelle Wort
     const positions = [];
 
-    // Kandidatenpositionen: über alle bereits platzierten Wörter kreuzen
+    // Kandidatenpositionen: An vorhandenen Wörtern kreuzen
     for (const existing of placedWords) {
       const existingWord = existing.solution;
 
@@ -208,11 +210,11 @@ function generateLayout(words) {
         for (let j = 0; j < existingWord.length; j++) {
           if (existingWord[j] !== letter) continue;
 
-          // Position des existierenden Buchstabens im Grid
+          // Position des übereinstimmenden Buchstabens im Grid
           const baseRow = existing.row + (existing.direction === 'down' ? j : 0);
           const baseCol = existing.col + (existing.direction === 'across' ? j : 0);
 
-          // orthogonale Richtung
+          // Orthogonale Richtung
           const dir = existing.direction === 'across' ? 'down' : 'across';
           const startRow = dir === 'down' ? baseRow - i : baseRow;
           const startCol = dir === 'across' ? baseCol - i : baseCol;
@@ -222,7 +224,7 @@ function generateLayout(words) {
       }
     }
 
-    // Positionen zufällig durchmischen, damit Layouts variieren
+    // Positionen zufällig durchmischen, damit das Layout variieren kann
     const shuffled = positions.sort(() => Math.random() - 0.5);
 
     for (const pos of shuffled) {
@@ -234,7 +236,7 @@ function generateLayout(words) {
 
       if (!canPlaceWordBasic(grid, word, row, col, direction)) continue;
 
-      // temporär setzen
+      // Wort testweise setzen
       placeWordOnGrid(grid, word, row, col, direction);
       placedWords.push({
         ...wordObj,
@@ -244,30 +246,31 @@ function generateLayout(words) {
         number: nextNumber
       });
 
-      // Layout nach jedem Schritt validieren
+      // Nur weiter backtracken, wenn das Layout weiterhin gültig bleibt
       if (isLayoutValid(grid, placedWords)) {
         backtrack(index + 1, nextNumber + 1);
       }
 
-      // zurücknehmen
+      // Wort wieder entfernen
       placedWords.pop();
       removeWordFromGrid(grid, word, row, col, direction, placedWords);
     }
 
-    // Wenn wir dieses Wort gar nicht platzieren, trotzdem weiter:
+    // Möglichkeit: Wort gar nicht platzieren und trotzdem weiter versuchen,
+    // falls das Layout mit weniger, aber gut passenden Wörtern besser ist.
     if (placedWords.length > bestPlaced.length && isLayoutValid(grid, placedWords)) {
       bestPlaced.splice(0, bestPlaced.length, ...placedWords.map(w => ({ ...w })));
       bestGrid = grid.map(row => row.slice());
     }
-    backtrack(index + 1, nextNumber); // Wort überspringen
+    backtrack(index + 1, nextNumber); // aktuelles Wort überspringen
   }
 
-  backtrack(1, 2); // wir haben Wort 0 schon gesetzt, nächste Nummer ist 2
+  backtrack(1, 2); // Wort 0 ist schon gesetzt, nächste Nummer = 2
 
   return { grid: bestGrid, placedWords: bestPlaced };
 }
 
-// Grid + Inputs + Hinweise zeichnen (mit Nummern und Pfeilen)
+// Grid + Eingabefelder + Hinweise rendern
 function renderGrid(grid, placedWords) {
   const table = document.getElementById('crossword');
   table.innerHTML = '';
@@ -287,7 +290,7 @@ function renderGrid(grid, placedWords) {
     }
   });
 
-  // Mapping von Zellen zu Wort-IDs
+  // Mapping: jede Zelle -> welche Wortnummern laufen dort (across/down)
   const cellWords = {}; // "r-c" -> { across: number|undefined, down: number|undefined }
 
   placedWords.forEach(word => {
@@ -303,6 +306,7 @@ function renderGrid(grid, placedWords) {
     }
   });
 
+  // Gitterzellen + Input-Felder erzeugen
   for (let r = 0; r < GRID_SIZE; r++) {
     const tr = document.createElement('tr');
     for (let c = 0; c < GRID_SIZE; c++) {
@@ -330,7 +334,7 @@ function renderGrid(grid, placedWords) {
 
         td.appendChild(input);
 
-        // Nummer + Pfeile in Startzellen anzeigen
+        // Nummer + Richtungspfeile in Startzellen anzeigen
         if (startCells.has(key)) {
           const entry = startCells.get(key);
           const num = entry.number;
@@ -375,7 +379,7 @@ function renderGrid(grid, placedWords) {
     table.appendChild(tr);
   }
 
-  // Hinweise rendern
+  // Hinweise-Wrapping: Waagerecht vs. Senkrecht
   const acrossList = document.getElementById('hints-across');
   const downList = document.getElementById('hints-down');
   acrossList.innerHTML = '';
@@ -395,6 +399,7 @@ function renderGrid(grid, placedWords) {
   const inputs = Array.from(document.querySelectorAll('#crossword input'));
   let currentDirection = 'across';
 
+  // Alle Inputs eines Wortes (nach Richtung) holen und sortieren
   function getInputsForWord(wordNumber, direction) {
     return inputs
       .filter(inp => inp.dataset[direction] == wordNumber)
@@ -416,29 +421,12 @@ function renderGrid(grid, placedWords) {
       const hasAcross = !!input.dataset.across;
       const hasDown = !!input.dataset.down;
 
-      const r = parseInt(input.dataset.row, 10);
-      const c = parseInt(input.dataset.col, 10);
-      const key = r + '-' + c;
-      const startInfo = startCells.get(key);
-
-      if (startInfo) {
-        // Startfeld eines Wortes: Richtung gezielt setzen
-        if (startInfo.hasAcross && !startInfo.hasDown) {
-          currentDirection = 'across';
-        } else if (!startInfo.hasAcross && startInfo.hasDown) {
-          currentDirection = 'down';
-        } else if (startInfo.hasAcross && startInfo.hasDown) {
-          // Startzelle für beide Richtungen: Priorität waagerecht
-          currentDirection = 'across';
-        }
-      } else {
-        // Kein Startfeld: bisherige Logik
-        if (hasAcross && !hasDown) {
-          currentDirection = 'across';
-        } else if (!hasAcross && hasDown) {
-          currentDirection = 'down';
-        }
-        // Kreuzung (hasAcross && hasDown) lässt currentDirection unverändert
+      // Richtung nur setzen, wenn eindeutig (nur across oder nur down).
+      // An Kreuzungen bleibt die bisherige Richtung erhalten.
+      if (hasAcross && !hasDown) {
+        currentDirection = 'across';
+      } else if (!hasAcross && hasDown) {
+        currentDirection = 'down';
       }
     });
 
@@ -455,6 +443,7 @@ function renderGrid(grid, placedWords) {
       const wordInputs = getInputsForWord(wordNumber, dirKey);
       const index = wordInputs.indexOf(input);
 
+      // automatisch zum nächsten Feld des aktuellen Wortes springen
       if (index > -1 && index < wordInputs.length - 1) {
         const nextInput = wordInputs[index + 1];
         nextInput.focus();
@@ -466,6 +455,7 @@ function renderGrid(grid, placedWords) {
       const dirKey = currentDirection;
       const wordNumber = input.dataset[dirKey];
 
+      // Backspace/Delete innerhalb eines Wortes: rückwärts springen
       if ((e.key === 'Backspace' || e.key === 'Delete') && wordNumber) {
         const wordInputs = getInputsForWord(wordNumber, dirKey);
         const index = wordInputs.indexOf(input);
@@ -488,6 +478,7 @@ function renderGrid(grid, placedWords) {
       const c = parseInt(input.dataset.col, 10);
       let target = null;
 
+      // Pfeiltasten wechseln explizit die Richtung
       if (e.key === 'ArrowRight') {
         currentDirection = 'across';
         target = inputs.find(inp => inp.dataset.row == r && inp.dataset.col == c + 1);
@@ -511,7 +502,7 @@ function renderGrid(grid, placedWords) {
   });
 }
 
-// Eingaben vs. Lösung vergleichen (einfache Gesamtprüfung)
+// Einfache Gesamtprüfung: alle Inputs gegen die Buchstaben im Grid vergleichen
 function checkSolution(grid, placedWords) {
   const inputs = document.querySelectorAll('#crossword input');
 
@@ -529,10 +520,9 @@ function checkSolution(grid, placedWords) {
   return true;
 }
 
-// Liefert eine Liste der Wortobjekte, in denen noch Fehler sind
+// Liefert eine Liste der Wortobjekte, in denen mindestens ein falscher Buchstabe steht
 function getIncorrectWords(grid, placedWords) {
   const inputs = document.querySelectorAll('#crossword input');
-
   const wrongWordNumbers = new Set();
 
   for (const input of inputs) {

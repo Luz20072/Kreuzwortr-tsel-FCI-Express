@@ -1,4 +1,4 @@
-// Fragen laden
+// Fragen (Lösungswörter + Hinweise) aus fragen.json laden
 async function loadQuestions() {
   const response = await fetch('fragen.json');
   if (!response.ok) {
@@ -8,25 +8,25 @@ async function loadQuestions() {
   return data;
 }
 
-// Zufällige Teilmenge wählen
+// Random-Subset aus dem Fragenpool wählen
 function getRandomSubset(array, count) {
   const shuffled = array.slice().sort(() => Math.random() - 0.5);
   return shuffled.slice(0, count);
 }
 
-// Popup für das Geheimwort anzeigen
+// Popup für das Geheimwort / Lösungsphrase anzeigen
 function showSecretPopup() {
   const popup = document.getElementById('secret-popup');
   const secretCodeElem = document.getElementById('secret-code');
 
-  // Dein Lösungswort
+  // Hier steht das finale Lösungswort / die Lösungsphrase
   const codewort = 'Tastatur statt Papier';
   secretCodeElem.textContent = codewort;
 
   popup.style.display = 'flex';
 }
 
-// Info-Popup anzeigen (für Fehler oder „unfaire“ Rätsel)
+// Info-Popup anzeigen (z.B. bei Fehlern oder unfair kleinem Rätsel)
 function showInfoPopup(message) {
   const popup = document.getElementById('info-popup');
   const msgElem = document.getElementById('info-message');
@@ -34,10 +34,11 @@ function showInfoPopup(message) {
   popup.style.display = 'flex';
 }
 
-// Neues Kreuzworträtsel erzeugen
+// Neues Kreuzworträtsel aus einem Zufallssatz von Fragen erzeugen
 async function generateNewCrossword() {
   const allQuestions = await loadQuestions();
 
+  // Anzahl der Wörter, die pro Rätsel maximal verwendet werden sollen
   const selectionCount = 10;
   if (allQuestions.length < selectionCount) {
     showInfoPopup('Es werden mindestens 10 Fragen im Pool benötigt, um ein Rätsel zu erzeugen.');
@@ -51,7 +52,7 @@ async function generateNewCrossword() {
     clue: q.clue
   }));
 
-  // Layout mit Backtracking erzeugen
+  // Layout (Grid + Positionen der Wörter) erzeugen
   const { grid, placedWords } = generateLayout(words);
 
   if (!placedWords || placedWords.length === 0) {
@@ -65,7 +66,7 @@ async function generateNewCrossword() {
 
   const checkBtn = document.getElementById('check-btn');
   checkBtn.onclick = () => {
-    // Detailliert prüfen, welche Wörter noch Fehler enthalten
+    // Prüfen, welche Wörter noch Fehler enthalten
     const wrongWords = getIncorrectWords(grid, placedWords);
 
     if (wrongWords.length > 0) {
@@ -83,29 +84,31 @@ async function generateNewCrossword() {
       return;
     }
 
-    // Fairness-Regel: fünf oder weniger Begriffe -> unfair
+    // Fairness-Regel: Rätsel mit fünf oder weniger Begriffen gelten als unfair
     if (placedWords.length <= 5) {
       showInfoPopup('Dieses Rätsel hat zu wenige Begriffe und ist laut Regeln unfair. Bitte lade die Seite mit F5 neu, um ein neues Rätsel zu erzeugen.');
       return;
     }
 
-    // Alles korrekt UND genügend Begriffe
+    // Alles korrekt und genug Begriffe -> Erfolgspopup
     showSecretPopup();
   };
 }
 
-// Initialisierung
+// Initialisierung nach Laden des DOM
 document.addEventListener('DOMContentLoaded', () => {
   generateNewCrossword().catch(err => {
     console.error(err);
     showInfoPopup('Fehler beim Erzeugen des Kreuzworträtsels.');
   });
 
+  // Erfolgs-Popup schließen
   const closePopup = document.getElementById('close-popup');
   closePopup.addEventListener('click', () => {
     document.getElementById('secret-popup').style.display = 'none';
   });
 
+  // Info-Popup schließen
   const closeInfoPopup = document.getElementById('close-info-popup');
   closeInfoPopup.addEventListener('click', () => {
     document.getElementById('info-popup').style.display = 'none';
