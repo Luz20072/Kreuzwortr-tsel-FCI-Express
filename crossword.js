@@ -222,9 +222,6 @@ function generateLayout(words) {
       }
     }
 
-    // Zusätzlich: falls gar keine Kreuzmöglichkeit existiert, kann man optional
-    // noch "frei" platzieren – hier lassen wir das erstmal weg, damit Worte immer kreuzen.
-
     // Positionen zufällig durchmischen, damit Layouts variieren
     const shuffled = positions.sort(() => Math.random() - 0.5);
 
@@ -258,7 +255,6 @@ function generateLayout(words) {
     }
 
     // Wenn wir dieses Wort gar nicht platzieren, trotzdem weiter:
-    // vielleicht ist Layout mit weniger Wörtern besser/nötig.
     if (placedWords.length > bestPlaced.length && isLayoutValid(grid, placedWords)) {
       bestPlaced.splice(0, bestPlaced.length, ...placedWords.map(w => ({ ...w })));
       bestGrid = grid.map(row => row.slice());
@@ -353,7 +349,6 @@ function renderGrid(grid, placedWords) {
           numSpan.textContent = num;
           container.appendChild(numSpan);
 
-          // Pfeile klar trennen:
           if (entry.hasAcross && !entry.hasDown) {
             const arrowRight = document.createElement('span');
             arrowRight.textContent = '→';
@@ -365,7 +360,6 @@ function renderGrid(grid, placedWords) {
             arrowDown.style.fontSize = '8px';
             container.appendChild(arrowDown);
           } else if (entry.hasAcross && entry.hasDown) {
-            // optional: ein Symbol für beides, oder nur Zahl ohne Pfeil
             const arrowBoth = document.createElement('span');
             arrowBoth.textContent = '↘';
             arrowBoth.style.fontSize = '8px';
@@ -402,7 +396,8 @@ function renderGrid(grid, placedWords) {
   let currentDirection = 'across';
 
   function getInputsForWord(wordNumber, direction) {
-    return inputs.filter(inp => inp.dataset[direction] == wordNumber)
+    return inputs
+      .filter(inp => inp.dataset[direction] == wordNumber)
       .sort((a, b) => {
         const ar = parseInt(a.dataset.row, 10);
         const ac = parseInt(a.dataset.col, 10);
@@ -417,17 +412,18 @@ function renderGrid(grid, placedWords) {
   }
 
   inputs.forEach((input) => {
-      input.addEventListener('focus', () => {
+    input.addEventListener('focus', () => {
       const hasAcross = !!input.dataset.across;
       const hasDown = !!input.dataset.down;
 
+      // Nur dann Richtung setzen, wenn eindeutig.
+      // An Kreuzungen (hasAcross && hasDown) wird die aktuelle Richtung NICHT verändert.
       if (hasAcross && !hasDown) {
         currentDirection = 'across';
       } else if (!hasAcross && hasDown) {
         currentDirection = 'down';
       }
     });
-
 
     input.addEventListener('input', (e) => {
       const value = e.target.value.toUpperCase();
@@ -498,7 +494,7 @@ function renderGrid(grid, placedWords) {
   });
 }
 
-// Eingaben vs. Lösung vergleichen
+// Eingaben vs. Lösung vergleichen (einfache Gesamtprüfung)
 function checkSolution(grid, placedWords) {
   const inputs = document.querySelectorAll('#crossword input');
 
@@ -516,3 +512,31 @@ function checkSolution(grid, placedWords) {
   return true;
 }
 
+// Liefert eine Liste der Wortobjekte, in denen noch Fehler sind
+function getIncorrectWords(grid, placedWords) {
+  const inputs = document.querySelectorAll('#crossword input');
+
+  const wrongWordNumbers = new Set();
+
+  for (const input of inputs) {
+    const r = parseInt(input.dataset.row, 10);
+    const c = parseInt(input.dataset.col, 10);
+    const expected = grid[r][c];
+    const value = (input.value || '').toUpperCase();
+
+    if (value !== expected) {
+      const acrossNum = input.dataset.across;
+      const downNum = input.dataset.down;
+
+      if (acrossNum) {
+        wrongWordNumbers.add(parseInt(acrossNum, 10));
+      }
+      if (downNum) {
+        wrongWordNumbers.add(parseInt(downNum, 10));
+      }
+    }
+  }
+
+  const wrongWords = placedWords.filter(w => wrongWordNumbers.has(w.number));
+  return wrongWords;
+}

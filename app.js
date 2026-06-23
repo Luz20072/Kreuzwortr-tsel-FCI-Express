@@ -14,18 +14,19 @@ function getRandomSubset(array, count) {
   return shuffled.slice(0, count);
 }
 
-// Popup anzeigen
+// Popup für das Geheimwort anzeigen
 function showSecretPopup() {
   const popup = document.getElementById('secret-popup');
   const secretCodeElem = document.getElementById('secret-code');
 
-  const codewort = 'KEHRWERT'; // kannst du später beliebig ändern
+  // Dein Lösungswort
+  const codewort = 'Tastatur statt Papier';
   secretCodeElem.textContent = codewort;
 
   popup.style.display = 'flex';
 }
 
-// Info-Popup anzeigen (für Fehler oder unfair kleine Rätsel)
+// Info-Popup anzeigen (für Fehler oder „unfaire“ Rätsel)
 function showInfoPopup(message) {
   const popup = document.getElementById('info-popup');
   const msgElem = document.getElementById('info-message');
@@ -33,14 +34,13 @@ function showInfoPopup(message) {
   popup.style.display = 'flex';
 }
 
-
 // Neues Kreuzworträtsel erzeugen
 async function generateNewCrossword() {
   const allQuestions = await loadQuestions();
 
   const selectionCount = 10;
   if (allQuestions.length < selectionCount) {
-    alert('Es werden mindestens 10 Fragen im Pool benötigt.');
+    showInfoPopup('Es werden mindestens 10 Fragen im Pool benötigt, um ein Rätsel zu erzeugen.');
     return;
   }
 
@@ -55,7 +55,7 @@ async function generateNewCrossword() {
   const { grid, placedWords } = generateLayout(words);
 
   if (!placedWords || placedWords.length === 0) {
-    alert('Es konnte kein gültiges Kreuzworträtsel erzeugt werden. Versuche es nochmal.');
+    showInfoPopup('Es konnte kein gültiges Kreuzworträtsel erzeugt werden. Bitte lade die Seite neu.');
     return;
   }
 
@@ -63,27 +63,36 @@ async function generateNewCrossword() {
 
   renderGrid(grid, placedWords);
 
-    const checkBtn = document.getElementById('check-btn');
+  const checkBtn = document.getElementById('check-btn');
   checkBtn.onclick = () => {
-    const ok = checkSolution(grid, placedWords);
+    // Detailliert prüfen, welche Wörter noch Fehler enthalten
+    const wrongWords = getIncorrectWords(grid, placedWords);
 
-    if (!ok) {
-      // Fehler im Rätsel -> Info-Popup statt alert
-      showInfoPopup('Es sind noch Fehler im Rätsel. Schau bitte nochmal über deine Eingaben.');
+    if (wrongWords.length > 0) {
+      const numbers = wrongWords
+        .map(w => w.number)
+        .sort((a, b) => a - b);
+
+      const infoText =
+        'Es sind noch Fehler im Rätsel.\n' +
+        'Betroffen sind die Begriffe mit den Nummern: ' +
+        numbers.join(', ') +
+        '.';
+
+      showInfoPopup(infoText);
       return;
     }
 
-    // Fairness-Regel: Fünf oder weniger Begriffe -> unfair
+    // Fairness-Regel: fünf oder weniger Begriffe -> unfair
     if (placedWords.length <= 5) {
       showInfoPopup('Dieses Rätsel hat zu wenige Begriffe und ist laut Regeln unfair. Bitte lade die Seite mit F5 neu, um ein neues Rätsel zu erzeugen.');
       return;
     }
 
-    // Alles korrekt UND genug Begriffe -> Gewinn-Popup
+    // Alles korrekt UND genügend Begriffe
     showSecretPopup();
   };
-
-  };
+}
 
 // Initialisierung
 document.addEventListener('DOMContentLoaded', () => {
@@ -102,4 +111,3 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('info-popup').style.display = 'none';
   });
 });
-
