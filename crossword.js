@@ -416,12 +416,29 @@ function renderGrid(grid, placedWords) {
       const hasAcross = !!input.dataset.across;
       const hasDown = !!input.dataset.down;
 
-      // Nur dann Richtung setzen, wenn eindeutig.
-      // An Kreuzungen (hasAcross && hasDown) wird die aktuelle Richtung NICHT verändert.
-      if (hasAcross && !hasDown) {
-        currentDirection = 'across';
-      } else if (!hasAcross && hasDown) {
-        currentDirection = 'down';
+      const r = parseInt(input.dataset.row, 10);
+      const c = parseInt(input.dataset.col, 10);
+      const key = r + '-' + c;
+      const startInfo = startCells.get(key);
+
+      if (startInfo) {
+        // Startfeld eines Wortes: Richtung gezielt setzen
+        if (startInfo.hasAcross && !startInfo.hasDown) {
+          currentDirection = 'across';
+        } else if (!startInfo.hasAcross && startInfo.hasDown) {
+          currentDirection = 'down';
+        } else if (startInfo.hasAcross && startInfo.hasDown) {
+          // Startzelle für beide Richtungen: Priorität waagerecht
+          currentDirection = 'across';
+        }
+      } else {
+        // Kein Startfeld: bisherige Logik
+        if (hasAcross && !hasDown) {
+          currentDirection = 'across';
+        } else if (!hasAcross && hasDown) {
+          currentDirection = 'down';
+        }
+        // Kreuzung (hasAcross && hasDown) lässt currentDirection unverändert
       }
     });
 
